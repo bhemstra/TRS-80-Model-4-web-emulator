@@ -1,0 +1,7 @@
+[
+  { "name": "LS-DOS 6.3.1", "file": "disks/lsdos631n-m4-hd.hdv.gz", "os": "lsdos" },
+  { "name": "Fuzix (Model 4)", "file": "disks/hard4p-0.hdv.gz", "os": "fuzix" },
+  { "name": "LS-DOS-datafloppy (leeg, geformatteerd)", "file": "disks/lsdos-data.dsk.gz", "type": "floppy", "os": "lsdos" },
+  { "name": "Fuzix-opstartfloppy (kernel op de floppy)", "file": "disks/boot.dsk.gz", "type": "floppy", "os": "fuzix" },
+  { "name": "Fuzix-opstartfloppy (kernel van de harde schijf)", "file": "disks/hdboot.dsk.gz", "type": "floppy", "os": "fuzix" }
+]
