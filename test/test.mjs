@@ -36,6 +36,23 @@ for (const [disk, ask] of [['disks/boot.dsk.gz', true], ['disks/hdboot.dsk.gz', 
   expect('Fuzix: boots from ' + disk, ok && /\/dev\/hda2 .*% \//.test(r.screen), r.screen);
 }
 
+// Fuzix takes the date from the FreHD clock, and setdate -w sets it
+{
+  let m = machine(file('disks/hard4p-0.hdv.gz'));
+  m.bootHd();
+  let r = script(m, [...fuzixLogin, ['#', 'date'], ['#', null]], 200);
+  const today = new Date().toDateString().slice(4, 10);	// "Nov 11"
+  expect('Fuzix: the date comes from the FreHD clock', !/Enter new date/.test(r.screen) &&
+    r.screen.includes(today), r.screen);
+  r = script(m, [['#', 'setdate -u'], ['date:', '2030-01-02'], ['time:', '03:04:05'], ['#', 'setdate -w'], ['#', null]], 100);
+  const off = m.clockOffset;
+  m = machine(file('disks/hard4p-0.hdv.gz'));
+  m.clockOffset = off;
+  m.bootHd();
+  r = script(m, [...fuzixLogin, ['#', 'date'], ['#', null]], 200);
+  expect('Fuzix: setdate -w sets the FreHD clock', /Wed Jan 02 03:04:\d\d GMT 2030/.test(r.screen), r.screen);
+}
+
 // Fuzix: a file system on the LS-DOS data floppy in drive 2, read back
 // from drive 1 after a reboot
 {

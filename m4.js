@@ -2,9 +2,10 @@
 // and memory map bits of port 84H, video RAM (80x24 or 64x16), the
 // keyboard matrix, the real time clock interrupt (IM 1), the FD1793 floppy
 // controller with its NMI (floppy.js), the WD1010 hard disk (256 byte
-// sectors, 8 heads, 32 sectors per track), and the clock chip on ports
-// B0H-BCH that Fuzix reads. There is no ROM: bootHd() and bootFloppy() do
-// what the Model 4P boot ROM (and the FreHD auto boot) do.
+// sectors, 8 heads, 32 sectors per track) with the clock of a FreHD, and
+// optionally the clock chip on ports B0H-BCH. There is no ROM: bootHd()
+// and bootFloppy() do what the Model 4P boot ROM (and the FreHD auto
+// boot) do.
 
 import { FDC } from './floppy.js';
 
@@ -54,6 +55,9 @@ export class Model4 {
     this.crtc = new Uint8Array(16); this.crtcReg = 0;
     this.img = hdimg;				// may be null: no hard disk
     this.hd = { sdh: 0, cyl: 0, sec: 0, status: 0x50, buf: null, ptr: 0, wr: false, off: 0 };
+    this.frehd = { buf: [], ptr: 0, set: false };	// the FreHD clock commands
+    this.clockOffset = 0;			// ms the clock runs ahead of the PC (set by SET_TIME)
+    this.clockChip = false;			// the clock chip at B0H-BCH (not in a stock Model 4)
     this.fdc = new FDC(this);
     this.nmiPending = false;
     this.dirty = false;
@@ -121,9 +125,31 @@ export class Model4 {
     else if (c === 0x30) { h.buf = new Uint8Array(256); h.wr = true; h.off = off; }
   }
 
+  now() { return new Date(Date.now() + this.clockOffset); }
+
+  // The FreHD clock: command 1 (GET_TIME) to port C4H gives, and command 2
+  // (SET_TIME) takes, 6 bytes through C2H: seconds, minutes, hours, year
+  // from 2000, day, month 1-12, binary. Other FreHD commands are not there.
+  frehdCmd(v) {
+    const f = this.frehd, d = this.now();
+    f.ptr = 0; f.set = v === 2; f.buf = [];
+    if (v === 1) f.buf = [d.getSeconds(), d.getMinutes(), d.getHours(), d.getFullYear() - 2000, d.getDate(), d.getMonth() + 1];
+  }
+  frehdData(v) {
+    const f = this.frehd;
+    if (!f.set) return;
+    f.buf.push(v);
+    if (f.buf.length === 6) {
+      const [s, mi, h, y, day, mo] = f.buf;
+      this.clockOffset = new Date(2000 + y, mo - 1, day, h, mi, s).getTime() - Date.now();
+      f.set = false;
+    }
+  }
+
   // The clock chip Fuzix looks for at B0H-BCH: BCD digits of the time now
   rtc(p) {
-    const d = new Date(), two = (x, hi) => hi ? Math.floor(x / 10) : x % 10;
+    if (!this.clockChip) return 0xFF;
+    const d = this.now(), two = (x, hi) => hi ? Math.floor(x / 10) : x % 10;
     switch (p) {
       case 0xB0: return two(d.getSeconds(), 0); case 0xB1: return two(d.getSeconds(), 1);
       case 0xB2: return two(d.getMinutes(), 0); case 0xB3: return two(d.getMinutes(), 1);
@@ -155,6 +181,7 @@ export class Model4 {
         }
         return 0;
       case 0xC9: return 0;
+      case 0xC2: return this.frehd.ptr < this.frehd.buf.length ? this.frehd.buf[this.frehd.ptr++] : 0xFF;
       case 0xCF: return h.status;
     }
     return 0xFF;
@@ -177,6 +204,8 @@ export class Model4 {
           if (h.ptr === 256) { this.img.set(h.buf, h.off); h.wr = false; h.status = 0x50; this.dirty = true; }
         }
         return;
+      case 0xC2: this.frehdData(v); return;
+      case 0xC4: this.frehdCmd(v); return;
       case 0xCB: h.sec = v; return;
       case 0xCC: h.cyl = (h.cyl & 0xFF00) | v; return;
       case 0xCD: h.cyl = (h.cyl & 0xFF) | (v << 8); return;

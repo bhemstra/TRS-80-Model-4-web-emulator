@@ -72,7 +72,10 @@ can also load their own images; they stay in the browser.
 - WD1010 hard disk at C8H-CFH: drive 0, 8 heads, 32 sectors of 256 bytes
 - two 5.25" floppy drives on the FD1793 (F0H-F3H, select F4H) with the
   NMI at the end of a command (E4H)
-- the clock chip at B0H-BCH that Fuzix reads (the time of the PC)
+- the clock of a FreHD (ports C2H and C4H: GET_TIME and SET_TIME), which
+  Fuzix reads at boot and `setdate -w` sets; it starts at the time of the
+  PC. The clock chip at B0H-BCH is not in a stock Model 4 and is off
+  (`m.clockChip = true` turns it on)
 - the boot: there is no ROM. Like the Model 4P ROM and the FreHD auto
   boot ROM, the page loads hard disk cylinder 0 head 0 sector 1 into
   4300H and jumps there; from floppy, the first sector of track 0.
@@ -129,7 +132,8 @@ node test/test.mjs
 ```
 
 Boots Fuzix from the hard disk and from both its boot floppies, makes a
-file system on a floppy and reads it back after a reboot; boots
+file system on a floppy and reads it back after a reboot, reads and sets
+the FreHD clock; boots
 LS-DOS from the hard disk, formats a blank floppy, copies files to both
 drives, saves the floppies as `.dsk` (JV3), `.dmk` and `.imd`, reads them
 back in the other drives, and checks write protection.
