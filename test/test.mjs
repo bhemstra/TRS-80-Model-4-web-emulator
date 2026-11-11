@@ -16,23 +16,40 @@ const lsdos = (disks, cmds, secs = 400) => {
   m.bootHd();
   return script(m, [...lsdosLogin, ...cmds.map(c => ['Ready', c]), ['Ready', null]], secs);
 };
-const fuzixLogin = [['bootdev:', 'hda2'], ['login:', 'root']];
+const fuzixLogin = [['login:', 'root']];
 
-// Fuzix from the hard disk, as the 4P boot ROM or FreHD starts it
+// Fuzix from the hard disk, as the 4P boot ROM or FreHD starts it: root
+// hda2 without asking
 {
   const m = machine(file('disks/hard4p-0.hdv.gz'));
   const ok = m.bootHd();
   const r = script(m, [...fuzixLogin, ['#', 'uname -a'], ['#', 'df'], ['#', null]], 200);
-  expect('Fuzix: boots from the hard disk', ok && /Fuzix 0\.5 +trs80/.test(r.screen) &&
-    /\/dev\/hda2 .*% \//.test(r.screen), r.screen);
+  expect('Fuzix: boots from the hard disk without asking for the root', ok && !/bootdev:/.test(r.screen) &&
+    /Fuzix 0\.5 +trs80/.test(r.screen) && /\/dev\/hda2 .*% \//.test(r.screen), r.screen);
 }
 
-// Fuzix from both boot floppies, root on the hard disk
-for (const disk of ['disks/boot.dsk.gz', 'disks/hdboot.dsk.gz']) {
+// Fuzix from both boot floppies, root on the hard disk (boot.dsk asks)
+for (const [disk, ask] of [['disks/boot.dsk.gz', true], ['disks/hdboot.dsk.gz', false]]) {
   const m = machine(file('disks/hard4p-0.hdv.gz'), [await floppy(disk)]);
   const ok = m.bootFloppy();
-  const r = script(m, [...fuzixLogin, ['#', 'df'], ['#', null]], 200);
+  const r = script(m, [...(ask ? [['bootdev:', 'hda2']] : []), ...fuzixLogin, ['#', 'df'], ['#', null]], 200);
   expect('Fuzix: boots from ' + disk, ok && /\/dev\/hda2 .*% \//.test(r.screen), r.screen);
+}
+
+// Fuzix: a file system on the LS-DOS data floppy in drive 2, read back
+// from drive 1 after a reboot
+{
+  const fd = await floppy('disks/lsdos-data.dsk.gz');
+  let m = machine(file('disks/hard4p-0.hdv.gz'), [null, fd]);
+  m.bootHd();
+  script(m, [...fuzixLogin, ['#', 'mkfs /dev/fd1 32 360'], ['Confirm?', 'y'], ['#', 'mount /dev/fd1 /mnt'],
+    ['#', 'echo hallo > /mnt/x'], ['#', 'cp /bin/ls /mnt'], ['#', 'umount /mnt'], ['#', null]], 300);
+  m = machine(file('disks/hard4p-0.hdv.gz'), [fd]);
+  m.bootHd();
+  const r = script(m, [...fuzixLogin, ['#', 'mount /dev/fd0 /mnt'], ['#', 'cat /mnt/x'], ['#', '/mnt/ls /mnt'],
+    ['#', 'df'], ['#', null]], 300);
+  expect('Fuzix: mkfs on a floppy, read and run from it after a reboot',
+    /\nhallo\n/.test(r.screen) && /\nls\nx\n/.test(r.screen) && /\/dev\/fd0 +328 /.test(r.screen), r.screen);
 }
 
 // LS-DOS from the hard disk: the data floppy as :1, a blank one formatted as :2

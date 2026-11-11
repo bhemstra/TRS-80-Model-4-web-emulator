@@ -7,7 +7,7 @@ each keeps its own.
 |------|----------|---------|
 | `lsdos631n-m4-hd.hdv.gz` | LS-DOS 6.3.1 level N for the Model 4 on the hard disk (boots as on a Model 4P or with FreHD) | see below |
 | `lsdos-data.dsk.gz` | an empty LS-DOS data floppy (JV3; FORMAT, double density, one side, 40 cylinders) | see below |
-| `hard4p-0.hdv.gz` | Fuzix 0.5 for the Model 4 on the hard disk; answer `hda2` at `bootdev:` | GPL version 2 |
+| `hard4p-0.hdv.gz` | Fuzix 0.5 for the Model 4 on the hard disk (boots by itself with root `hda2`) | GPL version 2 |
 | `boot.dsk.gz` | Fuzix boot floppy (JV3) that loads the kernel from floppy; root `hda2` | GPL version 2 |
 | `hdboot.dsk.gz` | Fuzix boot floppy (JV3) that loads the kernel from the hard disk | GPL version 2 |
 

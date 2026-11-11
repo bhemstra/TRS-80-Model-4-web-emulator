@@ -108,19 +108,19 @@ DMK (`.dmk`, `.dsk`) and ImageDisk (`.imd`). Floppies are saved as JV3
 `.dsk`, `.dmk` or `.imd`. A blank floppy can be formatted from LS-DOS
 (`FORMAT :1`).
 
-In LS-DOS booted from the hard disk floppy 1 and 2 are `:1` and `:2`.
-Fuzix boots from its floppies, but its floppy driver cannot use a floppy
-file system on the Model 4 (see Fuzix below).
+In LS-DOS booted from the hard disk floppy 1 and 2 are `:1` and `:2`;
+in Fuzix they are `/dev/fd0` and `/dev/fd1`.
 
 ### Fuzix
 
 The Fuzix images (`hard4p-0.hdv`, `boot.jv3`, `hdboot.jv3`) are those of
-`make TARGET=trs80 diskimage` and run unchanged. At `bootdev:` answer
-`hda2`. Its floppy driver (`Kernel/platform/platform-trs80/devfd.c`)
-leaves the `config` field out of the `fdcmodes[]` initializers, so each
-value moves up one field: it then asks for 40 sectors per track, which no
-5.25" floppy has. Booting from floppy works, because the boot sector
-loads the kernel itself.
+`make TARGET=trs80 diskimage` and run unchanged. From the hard disk (and
+from `hdboot.jv3`, which loads the kernel from the hard disk) Fuzix comes
+up by itself with `hda2` as root; `boot.jv3` asks at `bootdev:` (answer
+`hda2`). Fuzix cannot format a floppy: format one with LS-DOS (or use
+the LS-DOS data floppy) and make a Fuzix file system on it with
+`mkfs /dev/fd0 32 360`. Fuzix uses the LS-DOS layout of 18 sectors
+numbered from 0.
 
 ## Tests
 
@@ -128,7 +128,8 @@ loads the kernel itself.
 node test/test.mjs
 ```
 
-Boots Fuzix from the hard disk and from both its boot floppies; boots
+Boots Fuzix from the hard disk and from both its boot floppies, makes a
+file system on a floppy and reads it back after a reboot; boots
 LS-DOS from the hard disk, formats a blank floppy, copies files to both
 drives, saves the floppies as `.dsk` (JV3), `.dmk` and `.imd`, reads them
 back in the other drives, and checks write protection.
