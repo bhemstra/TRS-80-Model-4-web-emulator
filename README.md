@@ -4,7 +4,7 @@ A TRS-80 Model 4 (4P) in a web page: the Z80, 128K of banked memory, the
 screen, the keyboard, the real time clock, the hard disk and two 5.25"
 floppy drives. It boots from the hard disk, as a Model 4P or a Model 4
 with a FreHD does, or from floppy, and comes with LS-DOS 6.3.1 and Fuzix
-to try. The page is in Dutch.
+to try. The page is in English.
 
 | File          | Contents                                                     |
 |---------------|--------------------------------------------------------------|
@@ -34,19 +34,22 @@ On a web site, copy `index.html`, `m4.js`, `floppy.js`, `z80.js`,
 
 ```html
 <iframe src="/m4/index.html?embed=1" title="TRS-80 Model 4"
-        style="width:100%; height:1000px; border:0"></iframe>
+        style="width:100%; height:1150px; border:0"></iframe>
 ```
 
 Address options: `?disk=` the hard disk (file or name, `none` for none),
 `?fd1=` and `?fd2=` the floppies, `?boot=fd` to start from floppy 1,
-`?embed=1` without the title and the explanation.
+`?embed=1` without the title and the explanation. Embedded, the page has
+no background of its own, so the site's shows through, and it keeps to
+the light theme (`&theme=dark` for the dark one); `&bg=ffffff` gives it a
+background colour (hex, without `#`).
 
 ## disks.json
 
 ```json
 [
   { "name": "LS-DOS 6.3.1", "file": "disks/lsdos631n-m4-hd.hdv.gz", "os": "lsdos" },
-  { "name": "Fuzix-opstartfloppy", "file": "disks/boot.dsk.gz", "type": "floppy", "os": "fuzix" }
+  { "name": "Fuzix boot floppy", "file": "disks/boot.dsk.gz", "type": "floppy", "os": "fuzix" }
 ]
 ```
 

@@ -38,7 +38,7 @@ const sector = (c, h, r, n, mfm, dam, data) => ({ c, h, r, n, mfm, dam, data });
 function parseIMD(b, name) {
   const d = new Disk(name);
   let i = b.indexOf(0x1A);
-  if (i < 0) throw new Error(name + ': geen IMD-kop');
+  if (i < 0) throw new Error(name + ': no IMD header');
   i++;
   while (i < b.length) {
     const mode = b[i], cyl = b[i + 1], head = b[i + 2], ns = b[i + 3], sz = b[i + 4];
@@ -278,7 +278,7 @@ export async function loadDisk(bytes, name) {
       !looksJV3(bytes)) return parseDMK(bytes, name);
   if (looksJV3(bytes)) return parseJV3(bytes, name);
   if (bytes.length % 2560 === 0 && bytes.length <= 2560 * 80) return parseJV1(bytes, name);
-  throw new Error(name + ': onbekend floppyformaat');
+  throw new Error(name + ': unknown floppy format');
 }
 
 // ---- The FD1793 and the drives
